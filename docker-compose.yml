@@ -1,0 +1,161 @@
+# ════════════════════════════════════════════════════════════════════
+#  docker-compose.yml — تشغيل البوت بأمر واحد
+#
+#  ── وضع Polling (الافتراضي — بدون نطاق أو HTTPS) ────────────────
+#    docker compose up -d
+#
+#  ── وضع Webhook (للإنتاج — يحتاج نطاق + HTTPS) ──────────────────
+#    1. ضع WEBHOOK_URL في .env
+#    2. شغّل: docker compose --profile webhook up -d
+#    3. احصل على شهادة SSL: docker compose run --rm certbot
+# ════════════════════════════════════════════════════════════════════
+
+version: "3.9"
+
+services:
+
+  # ─── البوت الرئيسي ─────────────────────────────────────────────────
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: telegram_media_bot
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    # ── ربط مجلد البيانات بالمضيف ──────────────────────────────────
+    volumes:
+      - ./bot_data:/app/bot/data
+      - ./bot/config.json:/app/bot/config.json
+      - ./bot/channels.json:/app/bot/channels.json
+      - ./bot/packages.json:/app/bot/packages.json
+      - ./bot/quotes.json:/app/bot/quotes.json
+
+    # ── الاعتماد على قاعدة البيانات إذا كانت مُفعَّلة ─────────────
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false    # لا يمنع التشغيل إذا لم يكن profile=db مفعلاً
+
+    # ── بورت Webhook الداخلي ────────────────────────────────────────
+    # يُفعَّل فقط في وضع Webhook — يتجاهله البوت تلقائياً في Polling
+    expose:
+      - "8443"
+
+    networks:
+      - bot_net
+
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+  # ─── PostgreSQL — قاعدة البيانات (profile: db أو webhook) ────────────
+  # يُشغَّل عند: docker compose --profile db up -d
+  # أو مع Webhook: docker compose --profile webhook --profile db up -d
+  postgres:
+    image: postgres:16-alpine
+    container_name: telegram_bot_db
+    profiles: ["db", "webhook"]
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB:       botdb
+      POSTGRES_USER:     botuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme123}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # بيانات دائمة
+
+    networks:
+      - bot_net
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U botuser -d botdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+
+  # ─── Nginx — Reverse Proxy للـ Webhook (profile: webhook) ──────────
+  # يُشغَّل فقط عند: docker compose --profile webhook up -d
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: telegram_bot_nginx
+    profiles: ["webhook"]
+    restart: unless-stopped
+    depends_on:
+      - bot
+
+    ports:
+      - "80:80"    # لـ Let's Encrypt والتحقق
+      - "443:443"  # HTTPS الرئيسي
+
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/www:/var/www/certbot:ro         # ملفات تحقق Let's Encrypt
+      - ./certbot/conf:/etc/letsencrypt:ro         # شهادات SSL
+
+    networks:
+      - bot_net
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+
+  # ─── Certbot — استخراج شهادة SSL مجانية ───────────────────────────
+  # شغّله مرة واحدة: docker compose run --rm certbot
+  # ثم أضف cron لتجديده: docker compose run --rm certbot renew
+  certbot:
+    image: certbot/certbot:latest
+    container_name: telegram_bot_certbot
+    profiles: ["webhook"]
+
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+
+    # استبدل example.com بنطاقك واستبدل your@email.com ببريدك
+    command: >
+      certonly --webroot
+      --webroot-path=/var/www/certbot
+      --email your@email.com
+      --agree-tos
+      --no-eff-email
+      -d example.com
+
+
+networks:
+  bot_net:
+    driver: bridge
+
+volumes:
+  postgres_data:    # بيانات PostgreSQL — تُحفظ خارج الحاوية

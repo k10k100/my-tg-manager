@@ -1,0 +1,68 @@
+# ════════════════════════════════════════════════════════════════════
+#  .dockerignore — ملفات يتجاهلها Docker عند بناء الصورة
+#  يُقلل حجم الصورة ويمنع نسخ الملفات الحساسة
+# ════════════════════════════════════════════════════════════════════
+
+# ─── أسرار وبيانات حساسة (لا تدخل الصورة أبداً!) ──────────────────
+.env
+.env.local
+.env.*
+*.secret
+
+# ─── بيانات المستخدمين الحية (تُوصل عبر Volume) ─────────────────────
+bot/users.json
+bot/analytics.json
+bot/payments.json
+bot/admin_log.json
+bot/admin_roles.json
+bot/scheduled_broadcasts.json
+bot/ads.json
+
+# ─── كود Node.js (لوحة الإدارة) — ليست جزءاً من بوت Python ──────────
+artifacts/
+node_modules/
+pnpm-lock.yaml
+package.json
+pnpm-workspace.yaml
+tsconfig*.json
+lib/
+scripts/
+
+# ─── بيئة Python المحلية ─────────────────────────────────────────────
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pythonlibs/
+.upm/
+
+# ─── ملفات Git و IDE ──────────────────────────────────────────────────
+.git/
+.gitignore
+.idea/
+.vscode/
+*.sublime-workspace
+.cursor/
+
+# ─── ملفات Replit ────────────────────────────────────────────────────
+.replit
+.replitignore
+.cache/
+.local/
+
+# ─── ملفات مؤقتة ─────────────────────────────────────────────────────
+tmp/
+*.log
+*.mp4
+*.mp3
+*.jpg
+*.jpeg
+*.png
+
+# ─── توثيق (اختياري — يمكن إزالة هذا السطر إذا أردت نسخه) ──────────
+README.md
+.env.example
+docker-compose.yml
+Dockerfile
+attached_assets/

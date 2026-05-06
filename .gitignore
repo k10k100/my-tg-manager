@@ -1,0 +1,77 @@
+# ════════════════════════════════════════════════════════════════════
+#  .gitignore — ملف يمنع رفع الملفات الحساسة والمؤقتة على GitHub
+# ════════════════════════════════════════════════════════════════════
+
+# ─── متغيرات البيئة والأسرار (لا ترفعها أبداً!) ─────────────────────
+.env
+.env.local
+.env.production
+*.secret
+
+# ─── بيانات البوت الحية (تُولَّد تلقائياً) ──────────────────────────
+bot/users.json
+bot/analytics.json
+bot/payments.json
+bot/admin_log.json
+bot/admin_roles.json
+bot/scheduled_broadcasts.json
+bot/ads.json
+
+# ─── ملفات التخزين المؤقت لبايثون ───────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.Python
+*.pyo
+
+# ─── بيئة بايثون الافتراضية ──────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+.pythonlibs/
+
+# ─── ملفات مؤقتة لتحميل الوسائط ─────────────────────────────────────
+/tmp/
+*.mp4
+*.mp3
+*.jpg
+*.jpeg
+*.png
+*.webm
+*.mkv
+
+# ─── Node.js ─────────────────────────────────────────────────────────
+node_modules/
+dist/
+out-tsc/
+*.tsbuildinfo
+
+# ─── IDEs ────────────────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.sublime-workspace
+
+# ─── نظام الملفات ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+
+# ─── Replit (خاص بالبيئة السحابية) ──────────────────────────────────
+.cache/
+.local/
+.upm/
+.replitignore
+.replit
+.cursor/
+.github/instructions/
+
+# ─── متفرقات ─────────────────────────────────────────────────────────
+npm-debug.log
+yarn-error.log
+coverage/
+.expo/
+.expo-shared/
