@@ -20,9 +20,9 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # نسخ ملف المتطلبات وتثبيتها
-COPY bot/requirements.txt /tmp/requirements.txt
+COPY bot/pyproject.toml /tmp/pyproject.toml
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r /tmp/requirements.txt
+    pip install --no-cache-dir /tmp/
 
 
 # ─── المرحلة الثانية: الصورة النهائية (أصغر حجماً) ──────────────────
